@@ -46,7 +46,7 @@ export function MonthlyCalendar({
   }, [schedules]);
 
   return (
-    <div className="rounded-xl border bg-card p-4 md:p-6 shadow-sm animate-fade-in">
+    <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-6 shadow-sm animate-fade-in">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <Button variant="ghost" size="icon" onClick={onPrevMonth}>
@@ -84,9 +84,9 @@ export function MonthlyCalendar({
             <button
               key={day}
               onClick={() => onSelectDate(dateStr)}
-              className={`
-                relative flex flex-col items-center justify-center rounded-lg p-2 text-sm transition-all
-                hover:bg-accent
+            className={`
+                relative flex flex-col items-center justify-center rounded-lg p-2 sm:p-2.5 text-sm min-h-[40px] sm:min-h-[44px] transition-all
+                hover:bg-accent active:scale-95
                 ${isToday && !isSelected ? "bg-calendar-today font-semibold" : ""}
                 ${isSelected ? "bg-calendar-selected text-primary-foreground font-semibold shadow-sm" : "text-card-foreground"}
               `}
