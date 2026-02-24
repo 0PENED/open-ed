@@ -152,7 +152,7 @@ export default function Index() {
     <div className="min-h-screen bg-background">
       {renderHeader()}
       <main className="mx-auto max-w-4xl px-4 py-6">
-        <div className="grid gap-6 md:grid-cols-[1fr_340px]">
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-[1fr_340px]">
           <MonthlyCalendar
             year={year}
             month={month}
