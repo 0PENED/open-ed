@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CalendarDays, ArrowRight, Plus, Key } from "lucide-react";
+import { CalendarDays, ArrowRight, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,14 +11,13 @@ import {
 } from "@/components/ui/dialog";
 
 interface OpenCodeEntryProps {
-  onSubmit: (code: string, password: string) => void;
+  onSubmit: (code: string) => void;
   onCreate: (code: string, name: string, password: string) => boolean;
   error?: string;
 }
 
 export function OpenCodeEntry({ onSubmit, onCreate, error }: OpenCodeEntryProps) {
   const [code, setCode] = useState("");
-  const [password, setPassword] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [newCode, setNewCode] = useState("");
   const [newName, setNewName] = useState("");
@@ -27,7 +26,7 @@ export function OpenCodeEntry({ onSubmit, onCreate, error }: OpenCodeEntryProps)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.trim() && password.trim()) onSubmit(code.trim(), password.trim());
+    if (code.trim()) onSubmit(code.trim());
   };
 
   const handleCreate = (e: React.FormEvent) => {
@@ -63,7 +62,7 @@ export function OpenCodeEntry({ onSubmit, onCreate, error }: OpenCodeEntryProps)
             OPENED
           </h1>
           <p className="text-muted-foreground">
-            Enter your OPENCODE and password to access a calendar
+            Enter your OPENCODE to view a calendar
           </p>
         </div>
 
@@ -74,16 +73,6 @@ export function OpenCodeEntry({ onSubmit, onCreate, error }: OpenCodeEntryProps)
             placeholder="Enter OPENCODE"
             className="h-12 text-center text-lg font-medium tracking-widest uppercase"
           />
-          <div className="relative">
-            <Key className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              className="h-12 pl-10 text-center text-base"
-            />
-          </div>
           {error && (
             <p className="text-center text-sm text-destructive animate-fade-in">{error}</p>
           )}
@@ -119,7 +108,7 @@ export function OpenCodeEntry({ onSubmit, onCreate, error }: OpenCodeEntryProps)
                 />
                 <Input
                   type="password"
-                  placeholder="Set a password"
+                  placeholder="Set a password (for editing)"
                   value={newPassword}
                   onChange={(e) => { setNewPassword(e.target.value); setCreateError(""); }}
                 />
