@@ -13,6 +13,7 @@ import {
   getSchedulesForDate,
   addSchedule,
   deleteSchedule,
+  verifyCalendarPassword,
 } from "@/lib/scheduleStore";
 import { CalendarDays, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,15 +39,27 @@ export default function Index() {
     return false;
   };
 
-  const handleOpenCode = (code: string) => {
+  const handleOpenCode = (code: string, password: string) => {
     const cal = getCalendarByCode(code);
-    if (cal) {
-      setOpenCode(cal.openCode);
-      setCalendarName(cal.name);
-      setEntryError("");
-    } else {
+    if (!cal) {
       setEntryError("Calendar not found. Check your OPENCODE.");
+      return;
     }
+    if (!verifyCalendarPassword(code, password)) {
+      setEntryError("Incorrect password.");
+      return;
+    }
+    setOpenCode(cal.openCode);
+    setCalendarName(cal.name);
+    setEntryError("");
+  };
+
+  const handleCreateCalendar = (code: string, name: string, password: string): boolean => {
+    const existing = getCalendarByCode(code);
+    if (existing) return false;
+    addCalendar(code, name, password);
+    refresh();
+    return true;
   };
 
   const handlePrevMonth = () => {
@@ -73,9 +86,9 @@ export default function Index() {
     refresh();
   };
 
-  // Calendar manager handlers
-  const handleAddCalendar = (code: string, name: string) => {
-    addCalendar(code, name);
+  // Admin calendar manager handlers
+  const handleAdminAddCalendar = (code: string, name: string) => {
+    addCalendar(code, name, "admin");
     refresh();
   };
 
@@ -114,7 +127,7 @@ export default function Index() {
           {isAdmin && (
             <AdminCalendarManager
               calendars={getCalendars()}
-              onAdd={handleAddCalendar}
+              onAdd={handleAdminAddCalendar}
               onDelete={handleDeleteCalendar}
               onSelect={handleSelectCalendar}
             />
@@ -133,14 +146,14 @@ export default function Index() {
           {isAdmin && (
             <AdminCalendarManager
               calendars={getCalendars()}
-              onAdd={handleAddCalendar}
+              onAdd={handleAdminAddCalendar}
               onDelete={handleDeleteCalendar}
               onSelect={handleSelectCalendar}
             />
           )}
           <AdminLoginDialog isAdmin={isAdmin} onLogin={handleLogin} onLogout={() => setIsAdmin(false)} />
         </div>
-        <OpenCodeEntry onSubmit={handleOpenCode} error={entryError} />
+        <OpenCodeEntry onSubmit={handleOpenCode} onCreate={handleCreateCalendar} error={entryError} />
       </div>
     );
   }
@@ -166,7 +179,7 @@ export default function Index() {
             <DaySchedulePanel
               date={selectedDate}
               schedules={daySchedules}
-              isAdmin={isAdmin}
+              isAdmin={true}
               onAdd={handleAddSchedule}
               onDelete={handleDeleteSchedule}
               onClose={() => setSelectedDate(null)}

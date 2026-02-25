@@ -1,19 +1,55 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CalendarDays, ArrowRight } from "lucide-react";
+import { CalendarDays, ArrowRight, Plus, Key } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface OpenCodeEntryProps {
-  onSubmit: (code: string) => void;
+  onSubmit: (code: string, password: string) => void;
+  onCreate: (code: string, name: string, password: string) => boolean;
   error?: string;
 }
 
-export function OpenCodeEntry({ onSubmit, error }: OpenCodeEntryProps) {
+export function OpenCodeEntry({ onSubmit, onCreate, error }: OpenCodeEntryProps) {
   const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newCode, setNewCode] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [createError, setCreateError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.trim()) onSubmit(code.trim());
+    if (code.trim() && password.trim()) onSubmit(code.trim(), password.trim());
+  };
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCode.trim() || !newName.trim() || !newPassword.trim()) {
+      setCreateError("All fields are required");
+      return;
+    }
+    if (newPassword.trim().length < 4) {
+      setCreateError("Password must be at least 4 characters");
+      return;
+    }
+    const success = onCreate(newCode.trim().toUpperCase(), newName.trim(), newPassword.trim());
+    if (success) {
+      setCreateOpen(false);
+      setNewCode("");
+      setNewName("");
+      setNewPassword("");
+      setCreateError("");
+    } else {
+      setCreateError("This OPENCODE already exists");
+    }
   };
 
   return (
@@ -27,7 +63,7 @@ export function OpenCodeEntry({ onSubmit, error }: OpenCodeEntryProps) {
             OPENED
           </h1>
           <p className="text-muted-foreground">
-            Enter your OPENCODE to access a calendar
+            Enter your OPENCODE and password to access a calendar
           </p>
         </div>
 
@@ -38,6 +74,16 @@ export function OpenCodeEntry({ onSubmit, error }: OpenCodeEntryProps) {
             placeholder="Enter OPENCODE"
             className="h-12 text-center text-lg font-medium tracking-widest uppercase"
           />
+          <div className="relative">
+            <Key className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password"
+              className="h-12 pl-10 text-center text-base"
+            />
+          </div>
           {error && (
             <p className="text-center text-sm text-destructive animate-fade-in">{error}</p>
           )}
@@ -46,6 +92,46 @@ export function OpenCodeEntry({ onSubmit, error }: OpenCodeEntryProps) {
             <ArrowRight className="h-4 w-4" />
           </Button>
         </form>
+
+        <div className="mt-6 text-center">
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Plus className="h-4 w-4" />
+                Create New Calendar
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-sm">
+              <DialogHeader>
+                <DialogTitle className="font-display">Create Calendar</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreate} className="space-y-4">
+                <Input
+                  placeholder="OPENCODE"
+                  value={newCode}
+                  onChange={(e) => { setNewCode(e.target.value); setCreateError(""); }}
+                  className="uppercase tracking-wider"
+                />
+                <Input
+                  placeholder="Calendar name"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
+                <Input
+                  type="password"
+                  placeholder="Set a password"
+                  value={newPassword}
+                  onChange={(e) => { setNewPassword(e.target.value); setCreateError(""); }}
+                />
+                {createError && <p className="text-sm text-destructive">{createError}</p>}
+                <Button type="submit" className="w-full gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create Calendar
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
     </div>
   );
