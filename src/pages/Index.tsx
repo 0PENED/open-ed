@@ -15,13 +15,22 @@ import {
   deleteSchedule,
   verifyCalendarPassword,
 } from "@/lib/scheduleStore";
-import { CalendarDays, ArrowLeft } from "lucide-react";
+import { CalendarDays, ArrowLeft, Lock, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const ADMIN_PASSWORD = "123.com";
 
 export default function Index() {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isCalendarAuthed, setIsCalendarAuthed] = useState(false);
   const [openCode, setOpenCode] = useState<string | null>(null);
   const [calendarName, setCalendarName] = useState("");
   const [entryError, setEntryError] = useState("");
@@ -31,6 +40,11 @@ export default function Index() {
   const [, setTick] = useState(0);
   const refresh = useCallback(() => setTick((t) => t + 1), []);
 
+  // Calendar password login dialog state
+  const [calLoginOpen, setCalLoginOpen] = useState(false);
+  const [calPassword, setCalPassword] = useState("");
+  const [calLoginError, setCalLoginError] = useState(false);
+
   const handleLogin = (pw: string) => {
     if (pw === ADMIN_PASSWORD) {
       setIsAdmin(true);
@@ -39,18 +53,15 @@ export default function Index() {
     return false;
   };
 
-  const handleOpenCode = (code: string, password: string) => {
+  const handleOpenCode = (code: string) => {
     const cal = getCalendarByCode(code);
     if (!cal) {
       setEntryError("Calendar not found. Check your OPENCODE.");
       return;
     }
-    if (!verifyCalendarPassword(code, password)) {
-      setEntryError("Incorrect password.");
-      return;
-    }
     setOpenCode(cal.openCode);
     setCalendarName(cal.name);
+    setIsCalendarAuthed(false);
     setEntryError("");
   };
 
@@ -60,6 +71,19 @@ export default function Index() {
     addCalendar(code, name, password);
     refresh();
     return true;
+  };
+
+  const handleCalendarLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!openCode) return;
+    if (verifyCalendarPassword(openCode, calPassword)) {
+      setIsCalendarAuthed(true);
+      setCalLoginOpen(false);
+      setCalPassword("");
+      setCalLoginError(false);
+    } else {
+      setCalLoginError(true);
+    }
   };
 
   const handlePrevMonth = () => {
@@ -86,7 +110,6 @@ export default function Index() {
     refresh();
   };
 
-  // Admin calendar manager handlers
   const handleAdminAddCalendar = (code: string, name: string) => {
     addCalendar(code, name, "admin");
     refresh();
@@ -106,15 +129,17 @@ export default function Index() {
     if (cal) {
       setOpenCode(cal.openCode);
       setCalendarName(cal.name);
+      setIsCalendarAuthed(false);
     }
   };
 
-  // Header for calendar view
+  const canEdit = isCalendarAuthed || isAdmin;
+
   const renderHeader = () => (
     <header className="sticky top-0 z-10 border-b bg-card/80 backdrop-blur-sm">
       <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setOpenCode(null); setSelectedDate(null); }}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setOpenCode(null); setSelectedDate(null); setIsCalendarAuthed(false); }}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-2">
@@ -124,6 +149,38 @@ export default function Index() {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {!canEdit && (
+            <Dialog open={calLoginOpen} onOpenChange={(o) => { setCalLoginOpen(o); setCalLoginError(false); setCalPassword(""); }}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+                  <LogIn className="h-4 w-4" />
+                  Log in to edit
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                  <DialogTitle className="font-display">Calendar Login</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleCalendarLogin} className="space-y-4">
+                  <Input
+                    type="password"
+                    placeholder="Enter calendar password"
+                    value={calPassword}
+                    onChange={(e) => { setCalPassword(e.target.value); setCalLoginError(false); }}
+                    className={calLoginError ? "border-destructive" : ""}
+                  />
+                  {calLoginError && <p className="text-sm text-destructive">Incorrect password</p>}
+                  <Button type="submit" className="w-full">Log in</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
+          {canEdit && !isAdmin && (
+            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" onClick={() => setIsCalendarAuthed(false)}>
+              <Lock className="h-4 w-4" />
+              Lock editing
+            </Button>
+          )}
           {isAdmin && (
             <AdminCalendarManager
               calendars={getCalendars()}
@@ -138,7 +195,6 @@ export default function Index() {
     </header>
   );
 
-  // OPENCODE entry screen
   if (!openCode) {
     return (
       <div className="relative min-h-screen">
@@ -179,7 +235,7 @@ export default function Index() {
             <DaySchedulePanel
               date={selectedDate}
               schedules={daySchedules}
-              isAdmin={true}
+              isAdmin={canEdit}
               onAdd={handleAddSchedule}
               onDelete={handleDeleteSchedule}
               onClose={() => setSelectedDate(null)}
