@@ -10,6 +10,7 @@ export interface Schedule {
 export interface CalendarData {
   openCode: string;
   name: string;
+  password: string;
   schedules: Schedule[];
 }
 
@@ -29,9 +30,15 @@ export function getCalendarByCode(code: string): CalendarData | undefined {
   return getCalendars().find((c) => c.openCode.toLowerCase() === code.toLowerCase());
 }
 
-export function addCalendar(openCode: string, name: string): CalendarData {
+export function verifyCalendarPassword(code: string, password: string): boolean {
+  const cal = getCalendarByCode(code);
+  if (!cal) return false;
+  return cal.password === password;
+}
+
+export function addCalendar(openCode: string, name: string, password: string): CalendarData {
   const calendars = getCalendars();
-  const newCal: CalendarData = { openCode, name, schedules: [] };
+  const newCal: CalendarData = { openCode, name, password, schedules: [] };
   calendars.push(newCal);
   saveCalendars(calendars);
   return newCal;
